@@ -1,0 +1,78 @@
+---
+title: "Final Project 401"
+author: "Stone Cai"
+date: "2024-10-20"
+output: html_document
+---
+
+```{r}
+
+data<- read.csv ("C:/Users/stone/Documents/Stat 401/Final Project data/LeagueofLegends.csv")
+
+##View(data)
+head(data)
+
+```
+
+
+
+First I want to filter to only keep variables relavent to my analysis of early game advantages. 
+```{r}
+library(dplyr)
+df_subset <- data%>% select(Year, bResult, rResult,golddiff,bKills,bTowers,bDragons,bHeralds,rKills, rTowers,rDragons,rHeralds)
+
+View(df_subset)
+
+```
+
+On thing I notice is that all 2015 games do not have any entries for the objective called "Herald" was introduced into the game in 2016. Thus, if I want to include herald as a
+final variable in my regression, I have to exclude all games from 2015. 
+
+```{r}
+df_filtered <- df_subset %>% filter(Year != 2015)
+##View(df_filtered)
+
+```
+Next, most of my variables have elements that are actually lists. I am going to extract the gold diff at 15 minutes. For variables such as kills, towers or dragons, I want to extract the first instance blue team secures the objective and the first instance red.
+
+
+```{r}
+df_filtered1 <- df_filtered %>%
+  mutate(golddiff1 = NA, bKills1=NA,bTowers1=NA, bDragons1=NA, bHeralds1=NA, rKills1=NA,rTowers1=NA, rDragons1=NA, rHeralds1=NA,)
+
+## extract gold difference at 15 minutes
+
+for (i in 1:nrow(df_filtered1)) {
+  
+    df_filtered1$golddiff1[i] <- df_filtered1$golddiff[[i]][15]
+ 
+}
+
+golddiff_string <- df_filtered1$golddiff[[1]]
+
+print(class(df_filtered1$golddiff[[1]]))
+
+print(class(df_filtered1$golddiff))
+
+df_filtered1$golddiff1 <- sapply(df_filtered1$golddiff, function(golddiff_string) {
+  #golddiff_string <- df_filtered1$golddiff[[1]]
+  cleaned_string <- gsub("\\[|\\]", "", golddiff_string)
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]] 
+  numeric_values <- as.numeric(split_values)
+  return(numeric_values[15])
+})
+
+View(df_filtered1)
+
+
+  bkills_string <- df_filtered1$bKills[[1]]
+  bkills_string
+  cleaned_string <- gsub("\\[|\\]", "", bkills_string)
+  cleaned_string
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+  split_values
+  numeric_values <- as.numeric(split_values)
+  as.numeric(split_values[1])
+
+View(df_filtered1)
+```
