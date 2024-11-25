@@ -2,7 +2,9 @@
 title: "Final Project 401"
 author: "Stone Cai"
 date: "2024-10-20"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r}
@@ -42,37 +44,101 @@ df_filtered1 <- df_filtered %>%
 
 ## extract gold difference at 15 minutes
 
-for (i in 1:nrow(df_filtered1)) {
-  
-    df_filtered1$golddiff1[i] <- df_filtered1$golddiff[[i]][15]
- 
-}
 
-golddiff_string <- df_filtered1$golddiff[[1]]
-
-print(class(df_filtered1$golddiff[[1]]))
-
-print(class(df_filtered1$golddiff))
 
 df_filtered1$golddiff1 <- sapply(df_filtered1$golddiff, function(golddiff_string) {
   #golddiff_string <- df_filtered1$golddiff[[1]]
   cleaned_string <- gsub("\\[|\\]", "", golddiff_string)
   split_values <- strsplit(cleaned_string, ",\\s*")[[1]] 
   numeric_values <- as.numeric(split_values)
-  return(numeric_values[15])
+ 
+  
+   return(numeric_values[15])
 })
 
 View(df_filtered1)
 
+##dont take absolute value of gold lead. If positive blue team is ahead at 15 mintues if negative blue team is behind at 15 minutes. 
 
-  bkills_string <- df_filtered1$bKills[[1]]
-  bkills_string
-  cleaned_string <- gsub("\\[|\\]", "", bkills_string)
-  cleaned_string
-  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
-  split_values
-  numeric_values <- as.numeric(split_values)
-  as.numeric(split_values[1])
 
 View(df_filtered1)
+
+
+##########################
+
+
+
+df_filtered1$bKills1 <- sapply(df_filtered1$bKills, function(bluekills_string) {
+  
+  #bkills_string <- df_filtered1$bKills[[1]]
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", bluekills_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+##View(df_filtered1)
+
+### cleaning blueTowers
+
+df_filtered1$bTowers1 <- sapply(df_filtered1$bTowers, function(bluetowers_string) {
+  
+  #bkills_string <- df_filtered1$bKills[[1]]
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", bluetowers_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+
+##View(df_filtered1)
+
+#####
+
+##View(df_filtered1)
+
+### cleaning blueTowers
+
+df_filtered1$bDragons1 <- sapply(df_filtered1$bDragons, function(bluedragons_string) {
+  
+  #bkills_string <- df_filtered1$bKills[[1]]
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", bluedragons_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+View(df_filtered1)
+
+
 ```
