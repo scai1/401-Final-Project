@@ -27,7 +27,8 @@ View(df_subset)
 
 ```
 
-On thing I notice is that all 2015 games do not have any entries for the objective called "Herald" was introduced into the game in 2016. Thus, if I want to include herald as a
+On thing I notice is that all 2015 games do not have any entries for the objective called "Herald" which 
+was introduced into the game in 2016. Thus, if I want to include herald as a
 final variable in my regression, I have to exclude all games from 2015. 
 
 ```{r}
@@ -56,12 +57,14 @@ df_filtered1$golddiff1 <- sapply(df_filtered1$golddiff, function(golddiff_string
    return(numeric_values[15])
 })
 
-View(df_filtered1)
+
+df_filtered1$golddiff1<- df_filtered1$golddiff1/ 1000
+
+##View(df_filtered1)
 
 ##dont take absolute value of gold lead. If positive blue team is ahead at 15 mintues if negative blue team is behind at 15 minutes. 
 
 
-View(df_filtered1)
 
 
 ##########################
@@ -111,11 +114,7 @@ df_filtered1$bTowers1 <- sapply(df_filtered1$bTowers, function(bluetowers_string
    return(numeric_values)
 })
 
-##View(df_filtered1)
-
-#####
-
-##View(df_filtered1)
+########
 
 ### cleaning blueTowers
 
@@ -138,7 +137,191 @@ df_filtered1$bDragons1 <- sapply(df_filtered1$bDragons, function(bluedragons_str
   
    return(numeric_values)
 })
-View(df_filtered1)
+##View(df_filtered1)
+
+##clean blue heralds
+
+df_filtered1$bHeralds1 <- sapply(df_filtered1$bHeralds, function(blueheralds_string) {
+  
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", blueheralds_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+##View(df_filtered1)
+
+##clean red kills
+
+df_filtered1$rKills1 <- sapply(df_filtered1$rKills, function(redkills_string) {
+  
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", redkills_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+##View(df_filtered1)
+
+### clean red towers
+
+df_filtered1$rTowers1 <- sapply(df_filtered1$rTowers, function(redtowers_string) {
+  
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", redtowers_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+##View(df_filtered1)
+###red dragons1
+
+df_filtered1$rDragons1 <- sapply(df_filtered1$rDragons, function(reddragons_string) {
+  
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", reddragons_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+##View(df_filtered1)
+
+##red heralds
+df_filtered1$rHeralds1 <- sapply(df_filtered1$rHeralds, function(redheralds_string) {
+  
+    # Check if the input is NULL or empty
+
+  cleaned_string <- gsub("\\[|\\]", "", redheralds_string)
+  
+  if (cleaned_string == "") {
+    return(NA)  # Return NA for invalid inputs
+  }
+  split_values <- strsplit(cleaned_string, ",\\s*")[[1]]
+
+  
+  numeric_values <- as.numeric(split_values[1])
+  #as.numeric(split_values[1])
+ 
+  
+   return(numeric_values)
+})
+##View(df_filtered1)
+
 
 
 ```
+
+Here,I clean each of my variables I'm interested in. For gold diff, I took bluegold diff at 15 minutes. So given a list of gold difference at every minute in a game, I chose the gold lead at 15 minutes as proxy
+to predict odds of winning the game. Note: Every game sampled did last at least 15 minutes so this is a reasonable proxy. Next, I wanted to extract the time stamps of when first kill, tower, dragon, and herald occur. To do so, I need to get time stamps for both blue and red teams. These variables are all list of lists. The list is sorted by increasing time already so I just need to extract the first list split the strings within each list and extract the first ELEMENT of each list. I have done so above. 
+
+
+```{r}
+df_filtered2 <- df_filtered1 %>%
+  mutate( Killdummy=NA,Towerdummy=NA, Dragondummy=NA, Heralddummy=NA)
+
+##View(df_filtered2)
+
+
+# Add result column
+df_filtered2$Killdummy <- ifelse(
+  is.na(df_filtered2$bKills1), 0,  # If bKills1 is NA, return 0
+  ifelse(is.na(df_filtered2$rKills1), 1,  # If rKills1 is NA, return 1
+         ifelse(df_filtered2$bKills1 < df_filtered2$rKills1, 1, 0)  # Otherwise, compare values
+  )
+)
+
+
+# Towerdummy
+df_filtered2$Towerdummy <- ifelse(
+  is.na(df_filtered2$bTowers1), 0,  # If bTower is NA, return 0
+  ifelse(is.na(df_filtered2$rTowers1), 1,  # If rTower is NA, return 1
+         ifelse(df_filtered2$bTowers1 < df_filtered2$rTowers1, 1, 0)  # Otherwise, compare values
+  )
+)
+
+# Dragondummy
+df_filtered2$Dragondummy <- ifelse(
+  is.na(df_filtered2$bDragons1), 0,  
+  ifelse(is.na(df_filtered2$rDragons1), 1, 
+         ifelse(df_filtered2$bDragons1 < df_filtered2$rDragons1, 1, 0)  # Otherwise, compare values
+  )
+)
+
+length(df_filtered2$bDragons1)
+
+
+# Heralddummy
+df_filtered2$Heralddummy <- ifelse(
+  is.na(df_filtered2$bHeralds1) & is.na(df_filtered2$rHeralds1), NA,  # Both are NA
+  ifelse(is.na(df_filtered2$bHeralds1), 0,  # Only bHerald1 is NA
+         ifelse(is.na(df_filtered2$rHeralds1), 1,  # Only rHerald1 is NA
+                ifelse(df_filtered2$bHeralds1 < df_filtered2$rHeralds1, 1, 0)  # Compare values
+         )
+  )
+)
+
+
+
+##View (df_filtered2)
+
+```
+
+
+```{r}
+df_filtered3 <- df_filtered2 %>%
+  mutate( FBlood=NA,FTower=NA, FDragon=NA)
+
+
+
+
+df_filtered3$FBlood <- ifelse(
+  is.na(df_filtered3$bKills1), df_filtered3$rKills1,  # If bKills1 is NA, return 0
+  ifelse(is.na(df_filtered3$rKills1),df_filtered3$ bKills1,  # If rKills1 is NA, return 1
+         ifelse(df_filtered3$bKills1 < df_filtered2$rKills1, df_filtered3$ bKills1, df_filtered3$rKills1)  # Otherwise, compare values
+  )
+)
+View(df_filtered3)
+
+```
+
+
