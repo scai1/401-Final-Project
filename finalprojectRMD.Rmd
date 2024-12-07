@@ -320,6 +320,35 @@ df_filtered3$FBlood <- ifelse(
          ifelse(df_filtered3$bKills1 < df_filtered2$rKills1, df_filtered3$ bKills1, df_filtered3$rKills1)  # Otherwise, compare values
   )
 )
+
+
+##repeat for first tower
+
+
+df_filtered3$FTower <- ifelse(
+  is.na(df_filtered3$bTowers1), df_filtered3$rTowers1,  # If bKills1 is NA, return 0
+  ifelse(is.na(df_filtered3$rTowers1),df_filtered3$ bTowers1,  # If rKills1 is NA, return 1
+         ifelse(df_filtered3$bTowers1 < df_filtered2$rTowers1, df_filtered3$ bTowers1, df_filtered3$rTowers1)  # Otherwise, compare values
+  )
+)
+
+
+##repeat for dragon
+
+
+
+
+df_filtered3$FDragon <- ifelse(
+  is.na(df_filtered3$bDragons1), df_filtered3$rDragons1,  # If bKills1 is NA, return 0
+  ifelse(is.na(df_filtered3$rDragons1),df_filtered3$ bDragons1,  # If rKills1 is NA, return 1
+         ifelse(df_filtered3$bDragons1 < df_filtered2$rDragons1, df_filtered3$ bDragons1, df_filtered3$rDragons1)  # Otherwise, compare values
+  )
+)
+
+
+
+
+
 View(df_filtered3)
 
 ```
