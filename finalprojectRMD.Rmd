@@ -3,27 +3,94 @@ title: "Final Project 401"
 author: "Stone Cai"
 date: "2024-10-20"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
+Introduction: 
+(All my codeoutuput and version controlled github is attached below the text here).
+
+League of Legends, like many other video games is a 5 vs 5 based video game with a binary outcome (Win
+ or lose). There is a blue team and red team and one of these teams must always win the game. I would like to use the dataset League of Legends from kaggle which recorded professional matches
+ across every sponsored league over the course of 6 splits. The years included range from 2015-2017. This accumulated in over 7500 total games. League
+ unlike many other videos game, is a game where accomplishing early objectives and winning early skirmishes
+ rewards a team with additional financial rewards (gold) within the game and allows a team who “wins”
+ early to typically accumulate larger gold advantages as the game progresses. This is famously coined as
+ “snowballing” within the gaming community in which earning early advantages typically accumulates to
+ additional advantages later. However, as humans are not perfect, there is the always the ability to make the
+ comeback, and teams occasionally still lose later on despite having huge early advantages. As a former player, there
+ are a few important early game objectives that typically dictates the state of the game later on. That includes, gold lead a team has at 
+ 15 minutes, first team to get a kill (aka First Blood), first team to get a tower, dragon, and Herald. Naturally,
+ as a follow up I'd like to ask the following questions. 1. What is the average gold lead at 15 minutes? 2. What is the mean time that the
+ first dragon is taken in a game?  3. When does first blood (aka first kill of the game) typically occur? 4. What does the distribution of first tower taken look like?
+ 
+For this project, I'd like to perform a logistic regression with result as the primary response variable against
+predictors to see how accomplishing early objectives increases or decreases win odds. To do this, first I need to 
+filter the data set into working form. This data set has 57 columns with 7500 observations. Simply, most of these columns will not be relevant to our 
+analysis. I first subsetted the data to only include Year, bResult, rResult,golddiff,bKills,bTowers,bDragons,bHeralds,rKills, rTowers,rDragons,rHeralds.
+
+
+After some consideration, I realized if I wanted to include Herald as a potential early game objective to analyze, I would have to filter out the Year 2015 out of my data.
+The "herald" objective was only introduced into the game from 2016 onwards. SO if I were to include Herald as predictor, I could only analyze the games in which it was available. 
+Next,I needed to isolate gold lead at 15 minutes.The Golddiff column is a list of gold leads accross every minute of the game. Here I just returned the 15th element of the list which is golddiff at 15. Finally,
+for purposes of the regression I divided gold lead by 1000 as better representative. 1 unit of gold is almost meaningless in the game, lead should really be measured in 000s. Next, I needed to 
+clean and return time stamps of bKills,bTowers, bDragons,bHeralds, and the same for the red team variables as well. Again, each element of for this column is a list of list. Take for example,
+bKills. This is a list of every "kill list" that a blue team achieved during the game. The nice thing for me, is that this is sorted in ascending timestamp order. Here, I first coded to return the first list within the "list of lists". Finally, if I parse out using string cleaning methods, I should be able to return the first timestamp of the first kill. I can repeat that same logic and repeat this for dragons, towers, and heralds. I also applied the same techniques for all the red team's version of these variables. Next, I created 4 dummy variables. Killdummy, Towerdummy, Dragondummy, Heralddummy.This is defined as 1 for blue team accomplishes the objective first and -1 for red team accomplishes objective first. This is important to define like this so R knows that for example blueteam not accomplishing the objective (-1) is simultaneously seen as a positive for the red  team. Here, I'm using comparison logic between blue and red team time stamps. Also, there are scenarios with NA in which a team (blue or red, but never both) might not accomplish a certain objective in a game. In this case, I automatically assume the other team is the first to accomplish that objective. Note:The only instance I could find where neither team took an objective during the whole game was when it came to Heralds (This becomes problematic later on in our model building and I'll discuss there). 
+
+Finally, I create the variables Fblood, Ftower,and Fdragon. Here, I am concerned when the first team took the objective first. Here, I don't care what side (blue or red) took it first. Again, I use comparison logic
+to extract the lower time if both teams accomplished an objective. If a team didn't take an objective, I could assume the first timestamp from other team was the timestamp of the "First objective". Here, I run some summary statistics (see below code output and graphical output) and histograms, which will help answer a few of the questions I posed earlier in the project. 
+
+1. What is the average gold lead at 15 minutes? 
+-Here, I take the absolute value of the golddiff1 column and then take the mean. This is important, because every game has a team with a gold lead. Golddiff1 just represents gold lead of the blueteam. Here, I find the 
+average gold lead at 15 minutes is 1.75k. 
+
+2. What is the mean time that the first dragon is taken in a game? 
+-Mean time of first dragon was 17.9 minutes and median time was 17 minutes. 
+
+3. When does first blood (aka first kill of the game) typically occur? 
+-Mean time of first blood was around 6.5 minutes. 
+
+4. What does the distribution of first tower taken look like?
+-Here, I notice something very strange, there are over 500 games in which the first tower of the game was taken before 5 minutes! This is extremely atypical and if we look at a histogram of the distribution of time of first tower taken, there is a bimodal peak in the distribution. League of Legends is not a game that stays constant throughout the years, there are micro patches and adjustments over time that tend to favor certain strategies and these strategies can look vastly different over the course of a couple of years. 
+
+Here, I had to a do a little bit of research as even former player like myself, was unsure of what was happening here. Eventually, I came to realize there was a certain strategy that was found frequently in 2016 across all leagues globally. It was known as the "laneswap meta". Here, this is drastically different than the traditional games found in most of the dataset. In "laneswap games" both teams willingly opt into a scenario in which they do not try to fight each other. In a typical game, there are 5 players spread across 3 lanes and traditionally, teams would match players up and try to fight each other in these "standard lanes". In a lane swap meta, teams would overload 4-5 players in lane and the other team would also willingly overload 4-5 players in a different lane. Note: It is important here that these lanes are different because essentially teams would just trade objectives freely without fighting each other. For example, in a lane swap scenario one team would take the first tower extremely fast ( as quickly as 2-3 minutes) and the other team would follow suit very closely in a different lane. The purpose of this strategy was to accelerate the game pace and inject gold into players very early on into the game. As a trade off, even if towers were taken quickly, because teams were not matching up to fight each other, kills came very late in some of these games. I also plotted histograms of Fblood and first dragon. These distributions were less surprising, but it is still important to note the right skew of the Fblood histogram. A vast majority of games had kills early on between 5-10 minutes with fewer observations in the time stamps after that.  
+
+Finally, I ran a logistic regression. Initially, I ran a logistic regression that included golddiff, Killdummy, Towerdummy, Dragondummy, and Heralddummy. However, upon further analysis, I notice too many games where NEITHER team took the herald which meant several hundred observations were being left out of my regression if I were to choose to include Heralddummy. I ended up dropping this variable in my logistic regression. 
+
+Referring to my code output, I ran a logistic regression and found all variables included in the model were significant at alpha= 0.05 level. I also ran a VIF on the predictors and all values were below 2 indicating there were no issues with collinearity. Additionally, I chose to convert the log-odd coefficients provided in the regression output. By exponentiating the log-odds, we obtain normal probability odds as seen below. 
+
+golddiff1   Killdummy  Towerdummy Dragondummy 
+2.0465168   0.8887574   0.3726235   1.1555067
+
+The interpretation is as follows. For golddiff1, for every unit increase (1000 gold lead) in gold lead at 15 minutes, the odds of winning increase by 104% almost doubling the odds of winning for each 1k gold lead. However, the next two odds are surprising. Here, a value of 0.888 for killdummy indicates an almost 12% decrease in odds of winning for obtaining the first kill and a 63% decrease in odds for taking the first tower. Finally, there is a 15.5 % increase in winning likelihood for obtaining the first dragon. Finally, to obtain the likely hood based on all 4 variables, one would have to multiply the effects of the variables together.  
+
+
+Here, the results of the Killdummy and Towerdummy are counter intuitive at first glance. However, I believe there may be a lot of confounding variables and effects I did not consider and potentially reflected in the model. League is a complicated game where events in game are not independent of each other. A game where a team is heavily leading the other often means the next objective taken is skewed in favor of the winning team and so on and so forth. For example, my data does not differentiate between "laneswap games" and standard games. I believe the laneswap games heavily skewed my model. For one, in those games towers were taken extremely quickly (mostly before 5 minutes), but in traditional games this might have been in the 10-15 minute range ( I did not explicitly confirm this, but would in future analysis). Next, the first kill in those games were typically very late, often times these kills came past the 15 minute mark when there might have already been a significant advantage determined. Similarly, there are also standard games where the first kill and first towers of the game came past 15 minutes. It possible to imagine a scenario where a team is already winning heavily at 15 minutes, so if I a first tower or first dragon is taken after this point, it wouldn't be indicator of team getting an early advantage, it would actually indicate a team who's already winning obtaining an objective they were likely going to take anyways. I believe there needs to be better controls and consideration for confounding variables in future analysis of this topic.  
+
+Conclusion:
+In conclusion, although I believe the model I present is accurate of what has been provided in the data, it is still extremely weak. I believe ultimately, there are a lot of confounding issues and faulty assumptions of independence where there may shouldn't have been. For example, I believe the ~500+ games of "laneswap games" might have extremely skewed our data to the point where our interepration of Killdummy of Towerdummy may not be correct. I believe I also may have severely overestimated the advantage one gains from taking these early objectives. For example, with first blood there are many games in which the first kill is almost immediately traded by the enemy team with second blood ( sometimes within seconds because of an ongoing fight). So even though my time stamp indicates a team got first blood, they may have given the advantage right back within seconds ( I didn't differentiate this in my analysis). Similarly, in laneswap games where towers are being traded very early on, one team might take a tower, but the enemy team in most cases would destroy a tower as well within seconds of the first one going down. Again, in this case, there isn't much of an advantage just because a team was the "first" to take an objective, there was no significant gold lead established as a 
+result of the transaction. Ultimately, I still believe gold lead at 15 minutes is probably the best indicator of win odds as indicated by our regression model. However, I believe our logistic regression model needs to drastically change to account for additional confounding effects and scenarios to get a more accurate understanding of how firstkill or Tower affects win percentage. I present my regression model obtained here, as best efforts for this project, but acknowledge it is limited and likely inaccurate due to limited accounting of confounding effects. 
+
+Github link: https://github.com/scai1/401-Final-Project
+
 
 ```{r}
 
 data<- read.csv ("C:/Users/stone/Documents/Stat 401/Final Project data/LeagueofLegends.csv")
 
 ##View(data)
-head(data)
+##head(data)
 
 ```
 
 
 
-First I want to filter to only keep variables relavent to my analysis of early game advantages. 
+First I want to filter to only keep variables relevant to my analysis of early game advantages. 
 ```{r}
 library(dplyr)
 df_subset <- data%>% select(Year, bResult, rResult,golddiff,bKills,bTowers,bDragons,bHeralds,rKills, rTowers,rDragons,rHeralds)
 
-View(df_subset)
+##View(df_subset)
+
 
 ```
 
@@ -34,6 +101,7 @@ final variable in my regression, I have to exclude all games from 2015.
 ```{r}
 df_filtered <- df_subset %>% filter(Year != 2015)
 ##View(df_filtered)
+##glimpse(df_filtered)
 
 ```
 Next, most of my variables have elements that are actually lists. I am going to extract the gold diff at 15 minutes. For variables such as kills, towers or dragons, I want to extract the first instance blue team secures the objective and the first instance red.
@@ -62,7 +130,7 @@ df_filtered1$golddiff1<- df_filtered1$golddiff1/ 1000
 
 ##View(df_filtered1)
 
-##dont take absolute value of gold lead. If positive blue team is ahead at 15 mintues if negative blue team is behind at 15 minutes. 
+##dont take absolute value of gold lead. If positive blue team is ahead at 15 minutes if negative blue team is behind at 15 minutes. 
 
 
 
@@ -264,26 +332,27 @@ df_filtered2 <- df_filtered1 %>%
 
 # Add result column
 df_filtered2$Killdummy <- ifelse(
-  is.na(df_filtered2$bKills1), 0,  # If bKills1 is NA, return 0
+  is.na(df_filtered2$bKills1), -1,  # If bKills1 is NA, return 0
   ifelse(is.na(df_filtered2$rKills1), 1,  # If rKills1 is NA, return 1
-         ifelse(df_filtered2$bKills1 < df_filtered2$rKills1, 1, 0)  # Otherwise, compare values
+         ifelse(df_filtered2$bKills1 < df_filtered2$rKills1, 1, -1)  # Otherwise, compare values
   )
 )
 
+##View(df_filtered2)
 
 # Towerdummy
 df_filtered2$Towerdummy <- ifelse(
-  is.na(df_filtered2$bTowers1), 0,  # If bTower is NA, return 0
+  is.na(df_filtered2$bTowers1),-1,  # If bTower is NA, return 0
   ifelse(is.na(df_filtered2$rTowers1), 1,  # If rTower is NA, return 1
-         ifelse(df_filtered2$bTowers1 < df_filtered2$rTowers1, 1, 0)  # Otherwise, compare values
+         ifelse(df_filtered2$bTowers1 < df_filtered2$rTowers1, 1,-1)  # Otherwise, compare values
   )
 )
 
 # Dragondummy
 df_filtered2$Dragondummy <- ifelse(
-  is.na(df_filtered2$bDragons1), 0,  
+  is.na(df_filtered2$bDragons1), -1,  
   ifelse(is.na(df_filtered2$rDragons1), 1, 
-         ifelse(df_filtered2$bDragons1 < df_filtered2$rDragons1, 1, 0)  # Otherwise, compare values
+         ifelse(df_filtered2$bDragons1 < df_filtered2$rDragons1, 1, -1)  # Otherwise, compare values
   )
 )
 
@@ -293,9 +362,9 @@ length(df_filtered2$bDragons1)
 # Heralddummy
 df_filtered2$Heralddummy <- ifelse(
   is.na(df_filtered2$bHeralds1) & is.na(df_filtered2$rHeralds1), NA,  # Both are NA
-  ifelse(is.na(df_filtered2$bHeralds1), 0,  # Only bHerald1 is NA
+  ifelse(is.na(df_filtered2$bHeralds1), -1,  # Only bHerald1 is NA
          ifelse(is.na(df_filtered2$rHeralds1), 1,  # Only rHerald1 is NA
-                ifelse(df_filtered2$bHeralds1 < df_filtered2$rHeralds1, 1, 0)  # Compare values
+                ifelse(df_filtered2$bHeralds1 < df_filtered2$rHeralds1, 1,-1)  # Compare values
          )
   )
 )
@@ -314,8 +383,9 @@ df_filtered3 <- df_filtered2 %>%
 
 
 
+
 df_filtered3$FBlood <- ifelse(
-  is.na(df_filtered3$bKills1), df_filtered3$rKills1,  # If bKills1 is NA, return 0
+  is.na(df_filtered3$bKills1), df_filtered3$rKills1,  # If bKills1 is NA, return -1
   ifelse(is.na(df_filtered3$rKills1),df_filtered3$ bKills1,  # If rKills1 is NA, return 1
          ifelse(df_filtered3$bKills1 < df_filtered2$rKills1, df_filtered3$ bKills1, df_filtered3$rKills1)  # Otherwise, compare values
   )
@@ -326,7 +396,7 @@ df_filtered3$FBlood <- ifelse(
 
 
 df_filtered3$FTower <- ifelse(
-  is.na(df_filtered3$bTowers1), df_filtered3$rTowers1,  # If bKills1 is NA, return 0
+  is.na(df_filtered3$bTowers1), df_filtered3$rTowers1,  # If bKills1 is NA, return -1
   ifelse(is.na(df_filtered3$rTowers1),df_filtered3$ bTowers1,  # If rKills1 is NA, return 1
          ifelse(df_filtered3$bTowers1 < df_filtered2$rTowers1, df_filtered3$ bTowers1, df_filtered3$rTowers1)  # Otherwise, compare values
   )
@@ -339,7 +409,7 @@ df_filtered3$FTower <- ifelse(
 
 
 df_filtered3$FDragon <- ifelse(
-  is.na(df_filtered3$bDragons1), df_filtered3$rDragons1,  # If bKills1 is NA, return 0
+  is.na(df_filtered3$bDragons1), df_filtered3$rDragons1,  # If bKills1 is NA, return -1
   ifelse(is.na(df_filtered3$rDragons1),df_filtered3$ bDragons1,  # If rKills1 is NA, return 1
          ifelse(df_filtered3$bDragons1 < df_filtered2$rDragons1, df_filtered3$ bDragons1, df_filtered3$rDragons1)  # Otherwise, compare values
   )
@@ -349,8 +419,79 @@ df_filtered3$FDragon <- ifelse(
 
 
 
-View(df_filtered3)
+head(df_filtered3)
 
 ```
 
+```{r}
+library(ggplot2)
 
+ggplot(df_filtered3, aes(x = FBlood)) +
+  geom_histogram(binwidth = 2, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Fbood", x = "Fbood", y = "Frequency") +
+  theme_minimal()
+
+
+# Histogram for Ftower
+ggplot(df_filtered3, aes(x = FTower)) +
+  geom_histogram(binwidth = 1, fill = "green", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Ftower", x = "Ftower", y = "Frequency") +
+  theme_minimal()
+
+# Histogram for Fdragon
+ggplot(df_filtered3, aes(x = FDragon)) +
+  geom_histogram(binwidth = 1, fill = "red", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Fdragon", x = "Fdragon", y = "Frequency") +
+  theme_minimal()
+
+##need to take abs value to generalize all gold leads not just blue gold lead
+mean(  abs(df_filtered3$golddiff1))
+
+print (mean (df_filtered3$FBlood))
+print(median(df_filtered3$FBlood))
+
+print (mean (df_filtered3$FTower))
+print (median (df_filtered3$FTower))
+
+
+print (mean (df_filtered3$FDragon,na.rm = TRUE))
+print (median (df_filtered3$FDragon,na.rm = TRUE))
+```
+```{r}
+##logistic regression
+
+# Fit the logistic regression model
+logistic_model <- glm(bResult ~ golddiff1 + Killdummy + Towerdummy + Dragondummy + Heralddummy, 
+                      data = df_filtered3, 
+                      family = binomial)
+
+# Display the summary of the model
+summary(logistic_model)
+
+exp(coef(logistic_model))  # Converts log-odds coefficients to odds ratios
+
+
+
+library(car)
+vif(logistic_model)
+
+
+##model with interaction terms 
+
+logistic_model1 <- glm(bResult ~ golddiff1 * Killdummy + golddiff1 * Towerdummy + Dragondummy + Heralddummy, 
+                      data = df_filtered3, family = binomial)
+summary (logistic_model1)
+
+exp(coef(logistic_model1))  # Converts log-odds coefficients to odds ratios
+
+##model excluding dragon and herald 
+
+logistic_model_simple <- glm(bResult ~ golddiff1 + Killdummy + Towerdummy+Dragondummy, 
+                      data = df_filtered3, 
+                      family = binomial)
+
+summary (logistic_model_simple)
+
+exp (coef(logistic_model_simple))
+
+```
